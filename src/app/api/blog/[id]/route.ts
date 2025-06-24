@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "../../../../generated/prisma";
-
-// 環境変数を動的に設定
-process.env.DATABASE_URL = "postgresql://postgres.temqtgwwkiouxakgbupi:YosshyRei0709@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+import { PrismaClient } from "@prisma/client";
 
 // Prismaクライアントのシングルトンインスタンス
 const prisma = new PrismaClient();
