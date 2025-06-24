@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 
 export default function CreatePostForm() {
     const [title, setTitle] = useState('');
@@ -9,6 +10,34 @@ export default function CreatePostForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+    const { user } = useUser();
+
+    // ユーザー情報をデータベースに同期する関数
+    const syncUserToDatabase = async () => {
+        if (!user) return;
+
+        try {
+            const response = await fetch('/api/sync-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: user.id,
+                    email: user.primaryEmailAddress?.emailAddress,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    imageUrl: user.imageUrl,
+                }),
+            });
+
+            if (!response.ok) {
+                console.warn('ユーザー同期に失敗しましたが、投稿を続行します');
+            }
+        } catch (error) {
+            console.warn('ユーザー同期エラー:', error);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,6 +50,9 @@ export default function CreatePostForm() {
         try {
             setLoading(true);
             setError(null);
+
+            // 投稿前にユーザー情報を同期
+            await syncUserToDatabase();
 
             const response = await fetch('/api/blog', {
                 method: 'POST',
@@ -37,7 +69,8 @@ export default function CreatePostForm() {
                 router.push('/');
             } else {
                 const data = await response.json();
-                setError('記事の投稿に失敗しました');
+                setError(data.error || '記事の投稿に失敗しました');
+                console.error('投稿エラー:', data);
             }
         } catch (err) {
             setError('エラーが発生しました');
