@@ -13,9 +13,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id          String   @id // ClerkのユーザーIDを使用
+  email       String   @unique
+  firstName   String?
+  lastName    String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // ブログ投稿とのリレーション
+  posts       Post[]
+}
+
 model Post {
   id          Int      @id @default(autoincrement())
   title       String
   description String
   date        DateTime @default(now())
+  userId      String?  // 作成者のClerk User ID
+  
+  // ユーザーとのリレーション
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
