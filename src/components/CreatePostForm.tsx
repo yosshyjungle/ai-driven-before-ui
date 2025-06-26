@@ -3,11 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { uploadImage } from '../lib/supabase';
 
 export default function CreatePostForm() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string>('');
+    const [tags, setTags] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const { user } = useUser();
@@ -39,6 +44,40 @@ export default function CreatePostForm() {
         }
     };
 
+    // 画像ファイルの選択処理
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // ファイルサイズチェック（5MB制限）
+            if (file.size > 5 * 1024 * 1024) {
+                setError('画像ファイルは5MB以下にしてください');
+                return;
+            }
+
+            // ファイル形式チェック
+            if (!file.type.startsWith('image/')) {
+                setError('画像ファイルを選択してください');
+                return;
+            }
+
+            setImageFile(file);
+
+            // プレビュー用のURLを生成
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImagePreview(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+            setError(null);
+        }
+    };
+
+    // 画像削除
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview('');
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -51,8 +90,28 @@ export default function CreatePostForm() {
             setLoading(true);
             setError(null);
 
-            // 投稿前にユーザー情報を同期
+            // ユーザー情報をデータベースに同期
             await syncUserToDatabase();
+
+            let imageUrl = null;
+
+            // 画像がある場合はアップロード
+            if (imageFile) {
+                setUploadingImage(true);
+                imageUrl = await uploadImage(imageFile);
+                setUploadingImage(false);
+
+                if (!imageUrl) {
+                    setError('画像のアップロードに失敗しました');
+                    return;
+                }
+            }
+
+            // タグの処理
+            const tagList = tags
+                .split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag.length > 0);
 
             const response = await fetch('/api/blog', {
                 method: 'POST',
@@ -62,20 +121,23 @@ export default function CreatePostForm() {
                 body: JSON.stringify({
                     title: title.trim(),
                     description: description.trim(),
+                    imageUrl: imageUrl,
+                    tags: tagList,
                 }),
             });
 
             if (response.ok) {
                 router.push('/');
             } else {
-                const data = await response.json();
-                setError(data.error || '記事の投稿に失敗しました');
-                console.error('投稿エラー:', data);
+                const errorData = await response.json();
+                setError(errorData.error || '投稿に失敗しました');
             }
         } catch (err) {
+            console.error('投稿エラー:', err);
             setError('エラーが発生しました');
         } finally {
             setLoading(false);
+            setUploadingImage(false);
         }
     };
 
@@ -112,6 +174,64 @@ export default function CreatePostForm() {
                     />
                 </div>
 
+                {/* 画像アップロード機能 */}
+                <div>
+                    <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+                        画像（任意）
+                    </label>
+                    <div className="space-y-4">
+                        <input
+                            type="file"
+                            id="image"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                            disabled={loading}
+                        />
+
+                        {imagePreview && (
+                            <div className="relative">
+                                <img
+                                    src={imagePreview}
+                                    alt="プレビュー"
+                                    className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeImage}
+                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                                    disabled={loading}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        )}
+
+                        <p className="text-xs text-gray-500">
+                            JPEGまたはPNG形式、5MB以下の画像をアップロードできます
+                        </p>
+                    </div>
+                </div>
+
+                {/* タグ入力 */}
+                <div>
+                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                        タグ（任意）
+                    </label>
+                    <input
+                        type="text"
+                        id="tags"
+                        value={tags}
+                        onChange={(e) => setTags(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        placeholder="タグをカンマ区切りで入力してください（例：技術, React, Web開発）"
+                        disabled={loading}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                        複数のタグを追加する場合は、カンマ（,）で区切ってください
+                    </p>
+                </div>
+
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                         {error}
@@ -121,15 +241,16 @@ export default function CreatePostForm() {
                 <div className="flex gap-4">
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || uploadingImage}
                         className="bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                        {loading ? '投稿中...' : '投稿する'}
+                        {uploadingImage ? '画像アップロード中...' : loading ? '投稿中...' : '投稿する'}
                     </button>
                     <button
                         type="button"
                         onClick={() => router.push('/')}
                         className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                        disabled={loading}
                     >
                         キャンセル
                     </button>
