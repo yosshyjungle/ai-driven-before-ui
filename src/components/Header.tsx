@@ -18,6 +18,9 @@ export default function Header() {
                             <Link href="/" className="text-gray-700 hover:text-pink-600 transition-colors">
                                 ホーム
                             </Link>
+                            <Link href="/browse" className="text-gray-700 hover:text-pink-600 transition-colors">
+                                記事を閲覧
+                            </Link>
                             {isSignedIn && (
                                 <>
                                     <Link href="/create" className="text-gray-700 hover:text-pink-600 transition-colors">
