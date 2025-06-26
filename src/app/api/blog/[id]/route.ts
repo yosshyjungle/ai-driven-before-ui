@@ -64,7 +64,7 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id: idString } = await params;
     const id: number = parseInt(idString);
-    const { title, description } = await req.json();
+    const { title, description, imageUrl } = await req.json();
     console.log(`PUT /api/blog/${id} - 記事更新開始`);
 
     if (isNaN(id)) {
@@ -108,7 +108,8 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
     const post = await prisma.post.update({
       data: {
         title: title.trim(),
-        description: description.trim()
+        description: description.trim(),
+        imageUrl: imageUrl || null
       },
       where: { id },
     });

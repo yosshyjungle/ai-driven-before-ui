@@ -20,9 +20,39 @@ export const GET = async (req: Request) => {
       }, { status: 401 });
     }
 
-    // 認証されたユーザーの投稿のみを取得（ユーザー情報も含む）
+    // URLパラメータからフィルター条件を取得
+    const url = new URL(req.url);
+    const tagFilter = url.searchParams.get('tag');
+    const favoritesOnly = url.searchParams.get('favorites') === 'true';
+
+    // クエリ条件を構築
+    let whereCondition: any = { userId: userId };
+
+    if (favoritesOnly) {
+      // お気に入りのみの場合
+      whereCondition = {
+        favorites: {
+          some: {
+            userId: userId
+          }
+        }
+      };
+    }
+
+    if (tagFilter) {
+      // タグでフィルタリング
+      whereCondition.postTags = {
+        some: {
+          tag: {
+            name: tagFilter
+          }
+        }
+      };
+    }
+
+    // 認証されたユーザーの投稿またはお気に入りを取得（ユーザー情報、タグ、お気に入り情報も含む）
     const posts = await prisma.post.findMany({
-      where: { userId: userId },
+      where: whereCondition,
       include: {
         user: {
           select: {
@@ -31,13 +61,37 @@ export const GET = async (req: Request) => {
             lastName: true,
             imageUrl: true
           }
+        },
+        postTags: {
+          include: {
+            tag: true
+          }
+        },
+        favorites: {
+          where: {
+            userId: userId
+          }
+        },
+        _count: {
+          select: {
+            favorites: true
+          }
         }
       },
       orderBy: { date: "desc" }
     });
+
+    // お気に入り状態を含む形式に変換
+    const postsWithFavorites = posts.map(post => ({
+      ...post,
+      isFavorited: post.favorites.length > 0,
+      favoriteCount: post._count.favorites,
+      tags: post.postTags.map(pt => pt.tag)
+    }));
+
     console.log(`記事取得成功: ${posts.length}件 (ユーザー: ${userId})`);
 
-    return NextResponse.json({ message: "Success", posts }, { status: 200 });
+    return NextResponse.json({ message: "Success", posts: postsWithFavorites }, { status: 200 });
   } catch (err) {
     console.error("記事取得エラー:", err);
     return NextResponse.json({
@@ -62,7 +116,7 @@ export const POST = async (req: Request) => {
       }, { status: 401 });
     }
 
-    const { title, description } = await req.json();
+    const { title, description, imageUrl, tags } = await req.json();
 
     if (!title || !description) {
       return NextResponse.json({
@@ -84,16 +138,49 @@ export const POST = async (req: Request) => {
       }, { status: 409 });
     }
 
-    const post = await prisma.post.create({
-      data: {
-        title: title.trim(),
-        description: description.trim(),
-        userId: userId // 必須のユーザーID
-      }
-    });
-    console.log("記事作成成功:", post.id);
+    // トランザクションで投稿とタグを作成
+    const result = await prisma.$transaction(async (tx) => {
+      // 投稿を作成
+      const post = await tx.post.create({
+        data: {
+          title: title.trim(),
+          description: description.trim(),
+          imageUrl: imageUrl || null,
+          userId: userId
+        }
+      });
 
-    return NextResponse.json({ message: "Success", post }, { status: 201 });
+      // タグが指定されている場合はタグを作成・関連付け
+      if (tags && Array.isArray(tags) && tags.length > 0) {
+        for (const tagName of tags) {
+          if (tagName.trim()) {
+            // タグを作成または取得
+            const tag = await tx.tag.upsert({
+              where: { name: tagName.trim() },
+              update: {},
+              create: {
+                name: tagName.trim(),
+                color: "#3B82F6"
+              }
+            });
+
+            // 投稿とタグを関連付け
+            await tx.postTag.create({
+              data: {
+                postId: post.id,
+                tagId: tag.id
+              }
+            });
+          }
+        }
+      }
+
+      return post;
+    });
+
+    console.log("記事作成成功:", result.id);
+
+    return NextResponse.json({ message: "Success", post: result }, { status: 201 });
   } catch (err) {
     console.error("記事作成エラー:", err);
     return NextResponse.json({
