@@ -17,6 +17,17 @@ const eslintConfig = [
       "node_modules/.prisma/**/*",
       ".next/**/*"
     ]
+  },
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_"
+        }
+      ]
+    }
   }
 ];
 

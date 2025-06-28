@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // GET 全タグの取得（認証不要・閲覧専用）
-export const GET = async (req: Request) => {
+export const GET = async (_req: Request) => {
     try {
         console.log("GET /api/public/tags - 公開タグ取得開始");
 

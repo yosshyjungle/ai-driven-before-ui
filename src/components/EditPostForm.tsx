@@ -1,21 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { uploadImage, deleteImage } from '../lib/supabase';
-import { updatePostSchema, imageFileSchema } from '@/lib/validations';
+import { imageFileSchema } from '@/lib/validations';
 
 interface EditPostFormProps {
     id: number;
 }
 
-interface Post {
-    id: number;
-    title: string;
-    description: string;
-    date: string;
-    imageUrl?: string | null;
-}
+
 
 export default function EditPostForm({ id }: EditPostFormProps) {
     const [title, setTitle] = useState('');
@@ -29,11 +23,7 @@ export default function EditPostForm({ id }: EditPostFormProps) {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    useEffect(() => {
-        fetchPost();
-    }, [id]);
-
-    const fetchPost = async () => {
+    const fetchPost = useCallback(async () => {
         try {
             setFetching(true);
             const response = await fetch(`/api/blog/${id}`);
@@ -46,12 +36,16 @@ export default function EditPostForm({ id }: EditPostFormProps) {
             } else {
                 setError('記事の取得に失敗しました');
             }
-        } catch (err) {
+        } catch {
             setError('エラーが発生しました');
         } finally {
             setFetching(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        fetchPost();
+    }, [fetchPost]);
 
     // 画像ファイルの選択処理
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,7 +136,7 @@ export default function EditPostForm({ id }: EditPostFormProps) {
             } else {
                 setError('記事の更新に失敗しました');
             }
-        } catch (err) {
+        } catch {
             setError('エラーが発生しました');
         } finally {
             setLoading(false);

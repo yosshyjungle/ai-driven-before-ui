@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
@@ -23,13 +23,7 @@ export default function BlogPostPage() {
 
     const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
-    useEffect(() => {
-        if (id) {
-            fetchPost();
-        }
-    }, [id]);
-
-    const fetchPost = async () => {
+    const fetchPost = useCallback(async () => {
         try {
             setLoading(true);
             const response = await fetch(`/api/blog/${id}`);
@@ -40,12 +34,18 @@ export default function BlogPostPage() {
             } else {
                 setError('記事が見つかりません');
             }
-        } catch (err) {
+        } catch {
             setError('エラーが発生しました');
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        if (id) {
+            fetchPost();
+        }
+    }, [id, fetchPost]);
 
     const handleDelete = async () => {
         if (!window.confirm('この記事を削除しますか？')) {
@@ -63,7 +63,7 @@ export default function BlogPostPage() {
             } else {
                 setError('削除に失敗しました');
             }
-        } catch (err) {
+        } catch {
             setError('エラーが発生しました');
         } finally {
             setDeleting(false);

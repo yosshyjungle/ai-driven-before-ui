@@ -14,7 +14,7 @@ export const GET = async (req: Request) => {
         const tagFilter = url.searchParams.get('tag');
 
         // クエリ条件を構築（認証不要なのでuserIdフィルターなし）
-        let whereCondition: any = {};
+        const whereCondition: { postTags?: { some: { tag: { name: string } } } } = {};
 
         if (tagFilter) {
             // タグでフィルタリング

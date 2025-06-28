@@ -32,45 +32,7 @@ const checkEnvironmentVariables = (): boolean => {
     return true
 }
 
-// バケットの存在確認
-const checkBucketExists = async (bucketName: string): Promise<boolean> => {
-    try {
-        // バケット一覧を取得
-        const { data: buckets, error: listError } = await supabase.storage.listBuckets()
 
-        if (listError) {
-            console.error('バケット一覧取得エラー:', listError)
-            console.log('利用可能なバケットを確認できません。デフォルトバケットを試します。')
-            return true // エラーでも処理を続行
-        }
-
-        console.log('利用可能なバケット:', buckets?.map(b => b.name))
-
-        // バケットが存在するかチェック
-        const bucketExists = buckets?.some(bucket => bucket.name === bucketName)
-
-        if (bucketExists) {
-            console.log(`バケット '${bucketName}' は存在します`)
-            return true
-        } else {
-            console.log(`バケット '${bucketName}' は存在しません`)
-            // 他の一般的なバケット名を提案
-            const commonBuckets = ['images', 'uploads', 'public', 'storage']
-            const availableCommonBucket = buckets?.find(bucket =>
-                commonBuckets.includes(bucket.name)
-            )
-
-            if (availableCommonBucket) {
-                console.log(`代替バケット '${availableCommonBucket.name}' が利用可能です`)
-            }
-
-            return false
-        }
-    } catch (error) {
-        console.error('バケット確認エラー:', error)
-        return true // エラーでも処理を続行
-    }
-}
 
 // 画像アップロード関数（環境変数チェックと匿名アクセス対応）
 export const uploadImage = async (file: File, primaryBucket: string = 'images'): Promise<string | null> => {

@@ -6,7 +6,7 @@ import { addFavoriteSchema } from "@/lib/validations";
 const prisma = new PrismaClient();
 
 // GET お気に入り一覧の取得
-export const GET = async (req: Request) => {
+export const GET = async (_req: Request) => {
     try {
         console.log("GET /api/favorites - お気に入り取得開始");
 

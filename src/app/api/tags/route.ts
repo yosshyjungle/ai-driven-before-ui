@@ -6,7 +6,7 @@ import { createTagSchema } from "@/lib/validations";
 const prisma = new PrismaClient();
 
 // GET 全タグの取得
-export const GET = async (req: Request) => {
+export const GET = async (_req: Request) => {
     try {
         console.log("GET /api/tags - タグ取得開始");
 

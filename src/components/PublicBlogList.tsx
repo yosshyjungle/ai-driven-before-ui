@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import BlogCard from './BlogCard';
 
 interface Tag {
@@ -42,10 +42,6 @@ export default function PublicBlogList() {
         fetchTags();
     }, []);
 
-    useEffect(() => {
-        fetchPosts();
-    }, [selectedTag]);
-
     const fetchTags = async () => {
         try {
             const response = await fetch('/api/public/tags');
@@ -58,7 +54,7 @@ export default function PublicBlogList() {
         }
     };
 
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
         try {
             setLoading(true);
 
@@ -76,12 +72,16 @@ export default function PublicBlogList() {
             } else {
                 setError('記事の取得に失敗しました');
             }
-        } catch (err) {
+        } catch {
             setError('エラーが発生しました');
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedTag]);
+
+    useEffect(() => {
+        fetchPosts();
+    }, [fetchPosts]);
 
     const clearFilters = () => {
         setSelectedTag('');
