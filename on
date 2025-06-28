@@ -1,0 +1,118 @@
+warning: LF will be replaced by CRLF in package-lock.json.
+The file will have its original line endings in your working directory
+[1mdiff --git a/package-lock.json b/package-lock.json[m
+[1mindex 18e034b..af561a4 100644[m
+[1m--- a/package-lock.json[m
+[1m+++ b/package-lock.json[m
+[36m@@ -5445,6 +5445,111 @@[m
+       "funding": {[m
+         "url": "https://github.com/sponsors/colinhacks"[m
+       }[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "node_modules/@next/swc-darwin-arm64": {[m
+[32m+[m[32m      "version": "15.3.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-15.3.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-z0qIYTONmPRbwHWvpyrFXJd5F9YWLCsw3Sjrzj2ZvMYy9NPQMPZ1NjOJh4ojr4oQzcGYwgJKfidzehaNa1BpEg==",[m
+[32m+[m[32m      "cpu": [[m
+[32m+[m[32m        "arm64"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "os": [[m
+[32m+[m[32m        "darwin"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": ">= 10"[m
+[32m+[m[32m      }[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "node_modules/@next/swc-darwin-x64": {[m
+[32m+[m[32m      "version": "15.3.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-15.3.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-Z0FYJM8lritw5Wq+vpHYuCIzIlEMjewG2aRkc3Hi2rcbULknYL/xqfpBL23jQnCSrDUGAo/AEv0Z+s2bff9Zkw==",[m
+[32m+[m[32m      "cpu": [[m
+[32m+[m[32m        "x64"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "os": [[m
+[32m+[m[32m        "darwin"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": ">= 10"[m
+[32m+[m[32m      }[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "node_modules/@next/swc-linux-arm64-gnu": {[m
+[32m+[m[32m      "version": "15.3.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-15.3.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-l8ZQOCCg7adwmsnFm8m5q9eIPAHdaB2F3cxhufYtVo84pymwKuWfpYTKcUiFcutJdp9xGHC+F1Uq3xnFU1B/7g==",[m
+[32m+[m[32m      "cpu": [[m
+[32m+[m[32m        "arm64"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "os": [[m
+[32m+[m[32m        "linux"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": ">= 10"[m
+[32m+[m[32m      }[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "node_modules/@next/swc-linux-arm64-musl": {[m
+[32m+[m[32m      "version": "15.3.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-15.3.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-wFyZ7X470YJQtpKot4xCY3gpdn8lE9nTlldG07/kJYexCUpX1piX+MBfZdvulo+t1yADFVEuzFfVHfklfEx8kw==",[m
+[32m+[m[32m      "cpu": [[m
+[32m+[m[32m        "arm64"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "os": [[m
+[32m+[m[32m        "linux"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": ">= 10"[m
+[32m+[m[32m      }[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "node_modules/@next/swc-linux-x64-gnu": {[m
+[32m+[m[32m      "version": "15.3.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-15.3.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-gEbH9rv9o7I12qPyvZNVTyP/PWKqOp8clvnoYZQiX800KkqsaJZuOXkWgMa7ANCCh/oEN2ZQheh3yH8/kWPSEg==",[m
+[32m+[m[32m      "cpu": [[m
+[32m+[m[32m        "x64"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "os": [[m
+[32m+[m[32m        "linux"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": ">= 10"[m
+[32m+[m[32m      }[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "node_modules/@next/swc-linux-x64-musl": {[m
+[32m+[m[32m      "version": "15.3.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-15.3.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-Cf8sr0ufuC/nu/yQ76AnarbSAXcwG/wj+1xFPNbyNo8ltA6kw5d5YqO8kQuwVIxk13SBdtgXrNyom3ZosHAy4A==",[m
+[32m+[m[32m      "cpu": [[m
+[32m+[m[32m        "x64"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "os": [[m
+[32m+[m[32m        "linux"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": ">= 10"[m
+[32m+[m[32m      }[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "node_modules/@next/swc-win32-arm64-msvc": {[m
+[32m+[m[32m      "version": "15.3.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-15.3.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-ay5+qADDN3rwRbRpEhTOreOn1OyJIXS60tg9WMYTWCy3fB6rGoyjLVxc4dR9PYjEdR2iDYsaF5h03NA+XuYPQQ==",[m
+[32m+[m[32m      "cpu": [[m
+[32m+[m[32m        "arm64"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "optional": true,[m
+[32m+[m[32m      "os": [[m
+[32m+[m[32m        "win32"[m
+[32m+[m[32m      ],[m
+[32m+[m[32m      "engines": {[m
+[32m+[m[32m        "node": ">= 10"[m
+[32m+[m[32m      }[m
+     }[m
+   }[m
+ }[m
