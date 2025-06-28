@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { uploadImage } from '../lib/supabase';
+import { createPostSchema, imageFileSchema } from '@/lib/validations';
 
 export default function CreatePostForm() {
     const [title, setTitle] = useState('');
@@ -48,15 +49,15 @@ export default function CreatePostForm() {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // ファイルサイズチェック（5MB制限）
-            if (file.size > 5 * 1024 * 1024) {
-                setError('画像ファイルは5MB以下にしてください');
-                return;
-            }
+            // Zodバリデーション
+            const fileValidation = imageFileSchema.safeParse({
+                size: file.size,
+                type: file.type
+            });
 
-            // ファイル形式チェック
-            if (!file.type.startsWith('image/')) {
-                setError('画像ファイルを選択してください');
+            if (!fileValidation.success) {
+                const errors = fileValidation.error.errors.map(err => err.message).join(', ');
+                setError(errors);
                 return;
             }
 
@@ -81,8 +82,23 @@ export default function CreatePostForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!title.trim() || !description.trim()) {
-            setError('タイトルと内容を入力してください');
+        // タグの処理
+        const tagList = tags
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(tag => tag.length > 0);
+
+        // Zodバリデーション
+        const validationResult = createPostSchema.safeParse({
+            title: title.trim(),
+            description: description.trim(),
+            imageUrl: null, // 画像URLは後で設定
+            tags: tagList
+        });
+
+        if (!validationResult.success) {
+            const errors = validationResult.error.errors.map(err => err.message).join(', ');
+            setError(errors);
             return;
         }
 
@@ -107,22 +123,16 @@ export default function CreatePostForm() {
                 }
             }
 
-            // タグの処理
-            const tagList = tags
-                .split(',')
-                .map(tag => tag.trim())
-                .filter(tag => tag.length > 0);
-
             const response = await fetch('/api/blog', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    title: title.trim(),
-                    description: description.trim(),
+                    title: validationResult.data.title,
+                    description: validationResult.data.description,
                     imageUrl: imageUrl,
-                    tags: tagList,
+                    tags: validationResult.data.tags,
                 }),
             });
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { uploadImage, deleteImage } from '../lib/supabase';
+import { updatePostSchema, imageFileSchema } from '@/lib/validations';
 
 interface EditPostFormProps {
     id: number;
@@ -56,15 +57,15 @@ export default function EditPostForm({ id }: EditPostFormProps) {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // ファイルサイズチェック（5MB制限）
-            if (file.size > 5 * 1024 * 1024) {
-                setError('画像ファイルは5MB以下にしてください');
-                return;
-            }
+            // Zodバリデーション
+            const fileValidation = imageFileSchema.safeParse({
+                size: file.size,
+                type: file.type
+            });
 
-            // ファイル形式チェック
-            if (!file.type.startsWith('image/')) {
-                setError('画像ファイルを選択してください');
+            if (!fileValidation.success) {
+                const errors = fileValidation.error.errors.map(err => err.message).join(', ');
+                setError(errors);
                 return;
             }
 

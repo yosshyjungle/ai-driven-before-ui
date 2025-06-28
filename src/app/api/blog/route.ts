@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
+import { createPostSchema } from "@/lib/validations";
 
 // Prismaクライアントのシングルトンインスタンス
 const prisma = new PrismaClient();
@@ -116,14 +117,20 @@ export const POST = async (req: Request) => {
       }, { status: 401 });
     }
 
-    const { title, description, imageUrl, tags } = await req.json();
+    const body = await req.json();
 
-    if (!title || !description) {
+    // Zodバリデーション
+    const validationResult = createPostSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(err => err.message).join(', ');
       return NextResponse.json({
         message: "Error",
-        error: "タイトルと内容は必須です"
+        error: `バリデーションエラー: ${errors}`
       }, { status: 400 });
     }
+
+    const { title, description, imageUrl, tags } = validationResult.data;
 
     // ユーザーが存在するかチェックし、存在しない場合はユーザーを作成
     try {

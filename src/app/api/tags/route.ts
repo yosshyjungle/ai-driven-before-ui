@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
+import { createTagSchema } from "@/lib/validations";
 
 const prisma = new PrismaClient();
 
@@ -43,14 +44,20 @@ export const POST = async (req: Request) => {
             }, { status: 401 });
         }
 
-        const { name, color } = await req.json();
+        const body = await req.json();
 
-        if (!name) {
+        // Zodバリデーション
+        const validationResult = createTagSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            const errors = validationResult.error.errors.map(err => err.message).join(', ');
             return NextResponse.json({
                 message: "Error",
-                error: "タグ名は必須です"
+                error: `バリデーションエラー: ${errors}`
             }, { status: 400 });
         }
+
+        const { name, color } = validationResult.data;
 
         // 既存のタグ名かチェック
         const existingTag = await prisma.tag.findUnique({
