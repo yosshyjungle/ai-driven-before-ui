@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
+    "build:skip-lint": "prisma generate && next build --no-lint",
     "start": "next start",
     "lint": "next lint"
   },

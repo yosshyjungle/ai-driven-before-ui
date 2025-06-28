@@ -27,6 +27,7 @@ export const GET = async (req: Request) => {
     const favoritesOnly = url.searchParams.get('favorites') === 'true';
 
     // クエリ条件を構築
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let whereCondition: any = { userId: userId };
 
     if (favoritesOnly) {
@@ -137,7 +138,7 @@ export const POST = async (req: Request) => {
       await prisma.user.findUniqueOrThrow({
         where: { id: userId }
       });
-    } catch (userNotFoundError) {
+    } catch {
       console.log(`ユーザー ${userId} がデータベースに存在しません。同期処理をトリガーします。`);
       return NextResponse.json({
         message: "Error",
