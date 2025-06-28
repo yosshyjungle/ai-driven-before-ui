@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { uploadImage, deleteImage } from '../lib/supabase';
+import { updatePostSchema, imageFileSchema } from '@/lib/validations';
 
 interface EditPostFormProps {
     id: number;
@@ -12,13 +14,18 @@ interface Post {
     title: string;
     description: string;
     date: string;
+    imageUrl?: string | null;
 }
 
 export default function EditPostForm({ id }: EditPostFormProps) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
@@ -35,6 +42,7 @@ export default function EditPostForm({ id }: EditPostFormProps) {
             if (response.ok && data.post) {
                 setTitle(data.post.title);
                 setDescription(data.post.description);
+                setCurrentImageUrl(data.post.imageUrl || null);
             } else {
                 setError('記事の取得に失敗しました');
             }
@@ -43,6 +51,45 @@ export default function EditPostForm({ id }: EditPostFormProps) {
         } finally {
             setFetching(false);
         }
+    };
+
+    // 画像ファイルの選択処理
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Zodバリデーション
+            const fileValidation = imageFileSchema.safeParse({
+                size: file.size,
+                type: file.type
+            });
+
+            if (!fileValidation.success) {
+                const errors = fileValidation.error.errors.map(err => err.message).join(', ');
+                setError(errors);
+                return;
+            }
+
+            setImageFile(file);
+
+            // プレビュー用のURLを生成
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImagePreview(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+            setError(null);
+        }
+    };
+
+    // 新しい画像の削除
+    const removeNewImage = () => {
+        setImageFile(null);
+        setImagePreview('');
+    };
+
+    // 既存画像の削除
+    const removeCurrentImage = () => {
+        setCurrentImageUrl(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -57,6 +104,27 @@ export default function EditPostForm({ id }: EditPostFormProps) {
             setLoading(true);
             setError(null);
 
+            let imageUrl = currentImageUrl;
+
+            // 新しい画像がある場合はアップロード
+            if (imageFile) {
+                setUploadingImage(true);
+                const newImageUrl = await uploadImage(imageFile);
+                setUploadingImage(false);
+
+                if (!newImageUrl) {
+                    setError('画像のアップロードに失敗しました');
+                    return;
+                }
+
+                // 古い画像を削除
+                if (currentImageUrl) {
+                    await deleteImage(currentImageUrl);
+                }
+
+                imageUrl = newImageUrl;
+            }
+
             const response = await fetch(`/api/blog/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -65,6 +133,7 @@ export default function EditPostForm({ id }: EditPostFormProps) {
                 body: JSON.stringify({
                     title: title.trim(),
                     description: description.trim(),
+                    imageUrl: imageUrl,
                 }),
             });
 
@@ -77,6 +146,7 @@ export default function EditPostForm({ id }: EditPostFormProps) {
             setError('エラーが発生しました');
         } finally {
             setLoading(false);
+            setUploadingImage(false);
         }
     };
 
@@ -121,6 +191,67 @@ export default function EditPostForm({ id }: EditPostFormProps) {
                     />
                 </div>
 
+                {/* 画像アップロード機能 */}
+                <div>
+                    <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+                        画像（任意）
+                    </label>
+                    <div className="space-y-4">
+                        {/* 既存の画像表示 */}
+                        {currentImageUrl && !imagePreview && (
+                            <div className="relative">
+                                <img
+                                    src={currentImageUrl}
+                                    alt="現在の画像"
+                                    className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeCurrentImage}
+                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                                    disabled={loading}
+                                >
+                                    ×
+                                </button>
+                                <p className="text-xs text-gray-500 mt-1">現在の画像</p>
+                            </div>
+                        )}
+
+                        <input
+                            type="file"
+                            id="image"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                            disabled={loading}
+                        />
+
+                        {/* 新しい画像のプレビュー */}
+                        {imagePreview && (
+                            <div className="relative">
+                                <img
+                                    src={imagePreview}
+                                    alt="新しい画像のプレビュー"
+                                    className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeNewImage}
+                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                                    disabled={loading}
+                                >
+                                    ×
+                                </button>
+                                <p className="text-xs text-gray-500 mt-1">新しい画像のプレビュー</p>
+                            </div>
+                        )}
+
+                        <p className="text-xs text-gray-500">
+                            JPEGまたはPNG形式、5MB以下の画像をアップロードできます
+                        </p>
+                    </div>
+                </div>
+
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                         {error}
@@ -130,10 +261,10 @@ export default function EditPostForm({ id }: EditPostFormProps) {
                 <div className="flex gap-4">
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || uploadingImage}
                         className="bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                        {loading ? '更新中...' : '更新する'}
+                        {uploadingImage ? '画像アップロード中...' : loading ? '更新中...' : '更新する'}
                     </button>
                     <button
                         type="button"

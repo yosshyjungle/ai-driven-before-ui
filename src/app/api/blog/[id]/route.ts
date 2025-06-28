@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
+import { updatePostSchema, idParamSchema } from "@/lib/validations";
 
 // Prismaクライアントのシングルトンインスタンス
 const prisma = new PrismaClient();
@@ -9,12 +10,18 @@ const prisma = new PrismaClient();
 export const GET = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id: idString } = await params;
-    const id: number = parseInt(idString);
-    console.log(`GET /api/blog/${id} - 記事取得開始`);
+    console.log(`GET /api/blog/${idString} - 記事取得開始`);
 
-    if (isNaN(id)) {
-      return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
+    // IDバリデーション
+    const idValidation = idParamSchema.safeParse({ id: idString });
+    if (!idValidation.success) {
+      return NextResponse.json({
+        message: "Error",
+        error: "無効なIDです"
+      }, { status: 400 });
     }
+
+    const id = idValidation.data.id;
 
     // ユーザー認証情報を取得
     const { userId } = await auth();
@@ -63,20 +70,33 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
 export const PUT = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id: idString } = await params;
-    const id: number = parseInt(idString);
-    const { title, description } = await req.json();
-    console.log(`PUT /api/blog/${id} - 記事更新開始`);
+    console.log(`PUT /api/blog/${idString} - 記事更新開始`);
 
-    if (isNaN(id)) {
-      return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
-    }
-
-    if (!title || !description) {
+    // IDバリデーション
+    const idValidation = idParamSchema.safeParse({ id: idString });
+    if (!idValidation.success) {
       return NextResponse.json({
         message: "Error",
-        error: "タイトルと内容は必須です"
+        error: "無効なIDです"
       }, { status: 400 });
     }
+
+    const id = idValidation.data.id;
+
+    const body = await req.json();
+
+    // リクエストボディのバリデーション
+    const validationResult = updatePostSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(err => err.message).join(', ');
+      return NextResponse.json({
+        message: "Error",
+        error: `バリデーションエラー: ${errors}`
+      }, { status: 400 });
+    }
+
+    const { title, description, imageUrl } = validationResult.data;
 
     // ユーザー認証情報を取得
     const { userId } = await auth();
@@ -108,7 +128,8 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
     const post = await prisma.post.update({
       data: {
         title: title.trim(),
-        description: description.trim()
+        description: description.trim(),
+        imageUrl: imageUrl || null
       },
       where: { id },
     });
@@ -128,12 +149,18 @@ export const PUT = async (req: Request, { params }: { params: Promise<{ id: stri
 export const DELETE = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
     const { id: idString } = await params;
-    const id: number = parseInt(idString);
-    console.log(`DELETE /api/blog/${id} - 記事削除開始`);
+    console.log(`DELETE /api/blog/${idString} - 記事削除開始`);
 
-    if (isNaN(id)) {
-      return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
+    // IDバリデーション
+    const idValidation = idParamSchema.safeParse({ id: idString });
+    if (!idValidation.success) {
+      return NextResponse.json({
+        message: "Error",
+        error: "無効なIDです"
+      }, { status: 400 });
     }
+
+    const id = idValidation.data.id;
 
     // ユーザー認証情報を取得
     const { userId } = await auth();

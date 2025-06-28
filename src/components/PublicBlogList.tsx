@@ -12,24 +12,31 @@ interface Tag {
     };
 }
 
+interface User {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    imageUrl?: string;
+}
+
 interface Post {
     id: number;
     title: string;
     description: string;
     date: string;
     imageUrl?: string;
-    isFavorited?: boolean;
-    favoriteCount?: number;
+    user: User;
     tags?: Tag[];
+    favoriteCount?: number;
+    isFavorited: boolean;
 }
 
-export default function BlogList() {
+export default function PublicBlogList() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [allTags, setAllTags] = useState<Tag[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedTag, setSelectedTag] = useState<string>('');
-    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
     useEffect(() => {
         fetchTags();
@@ -37,17 +44,17 @@ export default function BlogList() {
 
     useEffect(() => {
         fetchPosts();
-    }, [selectedTag, showFavoritesOnly]);
+    }, [selectedTag]);
 
     const fetchTags = async () => {
         try {
-            const response = await fetch('/api/tags');
+            const response = await fetch('/api/public/tags');
             const data = await response.json();
             if (response.ok) {
                 setAllTags(data.tags || []);
             }
         } catch (error) {
-            console.error('タグ取得エラー:', error);
+            console.error('公開タグ取得エラー:', error);
         }
     };
 
@@ -59,11 +66,8 @@ export default function BlogList() {
             if (selectedTag) {
                 params.append('tag', selectedTag);
             }
-            if (showFavoritesOnly) {
-                params.append('favorites', 'true');
-            }
 
-            const url = `/api/blog${params.toString() ? `?${params.toString()}` : ''}`;
+            const url = `/api/public/blog${params.toString() ? `?${params.toString()}` : ''}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -79,14 +83,8 @@ export default function BlogList() {
         }
     };
 
-    const handleFavoriteChange = () => {
-        // お気に入り状態が変更されたら記事一覧を再取得
-        fetchPosts();
-    };
-
     const clearFilters = () => {
         setSelectedTag('');
-        setShowFavoritesOnly(false);
     };
 
     if (loading) {
@@ -113,34 +111,19 @@ export default function BlogList() {
 
     return (
         <div className="space-y-6">
-            {/* フィルター部分 */}
+            {/* フィルター部分（お気に入りフィルターは除外） */}
             <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700">フィルター:</label>
-
-                        {/* お気に入りフィルター */}
-                        <button
-                            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${showFavoritesOnly
-                                    ? 'bg-red-100 text-red-700 border border-red-300'
-                                    : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-                                }`}
-                        >
-                            ❤️ お気に入り
-                        </button>
-                    </div>
-
                     {/* タグフィルター */}
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm text-gray-600">タグ:</span>
+                        <span className="text-sm font-medium text-gray-700">タグで絞り込み:</span>
                         {allTags.map((tag) => (
                             <button
                                 key={tag.id}
                                 onClick={() => setSelectedTag(selectedTag === tag.name ? '' : tag.name)}
                                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${selectedTag === tag.name
-                                        ? 'text-white border border-transparent'
-                                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                                    ? 'text-white border border-transparent'
+                                    : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                                     }`}
                                 style={{
                                     backgroundColor: selectedTag === tag.name ? tag.color : undefined
@@ -157,7 +140,7 @@ export default function BlogList() {
                     </div>
 
                     {/* フィルタークリア */}
-                    {(selectedTag || showFavoritesOnly) && (
+                    {selectedTag && (
                         <button
                             onClick={clearFilters}
                             className="text-sm text-gray-500 hover:text-gray-700 underline"
@@ -168,20 +151,13 @@ export default function BlogList() {
                 </div>
 
                 {/* アクティブなフィルターの表示 */}
-                {(selectedTag || showFavoritesOnly) && (
+                {selectedTag && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                             <span>表示中:</span>
-                            {showFavoritesOnly && (
-                                <span className="bg-red-100 text-red-700 px-2 py-1 rounded">
-                                    お気に入り
-                                </span>
-                            )}
-                            {selectedTag && (
-                                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                    タグ: {selectedTag}
-                                </span>
-                            )}
+                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                タグ: {selectedTag}
+                            </span>
                         </div>
                     </div>
                 )}
@@ -191,11 +167,8 @@ export default function BlogList() {
             {posts.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-gray-600 text-lg">
-                        {selectedTag || showFavoritesOnly ? 'フィルター条件に一致する記事がありません' : 'まだ記事がありません'}
+                        {selectedTag ? 'フィルター条件に一致する記事がありません' : 'まだ記事がありません'}
                     </p>
-                    {!selectedTag && !showFavoritesOnly && (
-                        <p className="text-gray-500 mt-2">最初の記事を書いてみませんか？</p>
-                    )}
                 </div>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -208,7 +181,11 @@ export default function BlogList() {
                             date={post.date}
                             imageUrl={post.imageUrl}
                             isFavorited={post.isFavorited}
-                            onFavoriteChange={handleFavoriteChange}
+                            onFavoriteChange={() => { }} // 閲覧専用なので空の関数
+                            showFavoriteButton={false} // お気に入りボタンを非表示
+                            isPublicView={true} // 公開ビューフラグ
+                            author={post.user} // 作者情報を追加
+                            favoriteCount={post.favoriteCount} // お気に入り数表示用
                         />
                     ))}
                 </div>

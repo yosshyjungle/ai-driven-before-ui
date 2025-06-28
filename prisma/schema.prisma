@@ -24,15 +24,62 @@ model User {
   
   // ブログ投稿とのリレーション
   posts       Post[]
+  // お気に入りとのリレーション
+  favorites   Favorite[]
 }
 
 model Post {
   id          Int      @id @default(autoincrement())
   title       String
   description String
+  imageUrl    String?  // 画像URLフィールドを追加
   date        DateTime @default(now())
   userId      String?  // 作成者のClerk User ID
   
   // ユーザーとのリレーション
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // お気に入りとのリレーション
+  favorites   Favorite[]
+  // タグとのリレーション
+  postTags    PostTag[]
+}
+
+// お気に入り機能のためのテーブル
+model Favorite {
+  id     Int    @id @default(autoincrement())
+  userId String
+  postId Int
+  createdAt DateTime @default(now())
+  
+  // リレーション
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // 複合ユニーク制約（同じユーザーが同じ投稿を複数回お気に入りできないようにする）
+  @@unique([userId, postId])
+}
+
+// タグ機能のためのテーブル
+model Tag {
+  id       Int    @id @default(autoincrement())
+  name     String @unique
+  color    String @default("#3B82F6") // デフォルトの色
+  createdAt DateTime @default(now())
+  
+  // 投稿とのリレーション
+  postTags PostTag[]
+}
+
+// 投稿とタグの中間テーブル
+model PostTag {
+  id     Int @id @default(autoincrement())
+  postId Int
+  tagId  Int
+  
+  // リレーション
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  // 複合ユニーク制約（同じ投稿に同じタグを複数回付けられないようにする）
+  @@unique([postId, tagId])
 }
