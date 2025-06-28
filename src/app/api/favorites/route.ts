@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "@clerk/nextjs/server";
+import { addFavoriteSchema } from "@/lib/validations";
 
 const prisma = new PrismaClient();
 
@@ -67,14 +68,20 @@ export const POST = async (req: Request) => {
             }, { status: 401 });
         }
 
-        const { postId } = await req.json();
+        const body = await req.json();
 
-        if (!postId) {
+        // Zodバリデーション
+        const validationResult = addFavoriteSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            const errors = validationResult.error.errors.map(err => err.message).join(', ');
             return NextResponse.json({
                 message: "Error",
-                error: "投稿IDは必須です"
+                error: `バリデーションエラー: ${errors}`
             }, { status: 400 });
         }
+
+        const { postId } = validationResult.data;
 
         // 投稿が存在するかチェック
         const post = await prisma.post.findUnique({
@@ -137,14 +144,20 @@ export const DELETE = async (req: Request) => {
             }, { status: 401 });
         }
 
-        const { postId } = await req.json();
+        const body = await req.json();
 
-        if (!postId) {
+        // Zodバリデーション
+        const validationResult = addFavoriteSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            const errors = validationResult.error.errors.map(err => err.message).join(', ');
             return NextResponse.json({
                 message: "Error",
-                error: "投稿IDは必須です"
+                error: `バリデーションエラー: ${errors}`
             }, { status: 400 });
         }
+
+        const { postId } = validationResult.data;
 
         const favorite = await prisma.favorite.findUnique({
             where: {

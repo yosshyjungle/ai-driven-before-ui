@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { idParamSchema } from "@/lib/validations";
 
 // Prismaクライアントのシングルトンインスタンス
 const prisma = new PrismaClient();
@@ -8,12 +9,18 @@ const prisma = new PrismaClient();
 export const GET = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     try {
         const { id: idString } = await params;
-        const id: number = parseInt(idString);
-        console.log(`GET /api/public/blog/${id} - 公開記事詳細取得開始`);
+        console.log(`GET /api/public/blog/${idString} - 公開記事詳細取得開始`);
 
-        if (isNaN(id)) {
-            return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
+        // IDバリデーション
+        const idValidation = idParamSchema.safeParse({ id: idString });
+        if (!idValidation.success) {
+            return NextResponse.json({
+                message: "Error",
+                error: "無効なIDです"
+            }, { status: 400 });
         }
+
+        const id = idValidation.data.id;
 
         // 認証不要で記事を取得
         const post = await prisma.post.findUnique({
